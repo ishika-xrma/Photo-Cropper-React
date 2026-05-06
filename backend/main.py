@@ -11,7 +11,7 @@ app = FastAPI()
 
 origins = [
     "http://localhost:5173",
-    "https://YOUR-VERCEL-APP.vercel.app",
+    "https://photo-cropper-react.netlify.app",
 ]
 
 app.add_middleware(
