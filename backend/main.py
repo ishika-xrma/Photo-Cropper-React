@@ -9,11 +9,17 @@ from image_processor import (
 
 app = FastAPI()
 
+origins = [
+    "http://localhost:5173",
+    "https://YOUR-VERCEL-APP.vercel.app",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
+    allow_credentials=False,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
 
 
