@@ -3,96 +3,64 @@ import { API } from "./api";
 
 export default function App() {
 
-  const [files,setFiles] =
-    useState([]);
+  const [files, setFiles] = useState([]);
+  const [ratio, setRatio] = useState("standard");
+  const [loading, setLoading] = useState(false);
 
-  const [ratio,setRatio] =
-    useState("standard");
+  const upload = async () => {
 
-  const [loading,setLoading] =
-    useState(false);
+    try {
 
+      setLoading(true);
 
-  const upload = async ()=>{
+      const form = new FormData();
 
-  try{
+      files.forEach((file) => {
+        form.append("files", file);
+      });
 
-    setLoading(true);
-
-    const form = new FormData();
-
-    files.forEach(file=>{
-      form.append("files", file);
-    });
-
-    form.append(
-      "ratio_type",
-      ratio
-    );
-
-    const res = await API.post(
-      "/crop",
-      form,
-      {
-        responseType:"blob"
-      }
-    );
-
-    const url =
-      window.URL.createObjectURL(
-        res.data
+      form.append(
+        "ratio_type",
+        ratio
       );
 
-    const a =
-      document.createElement("a");
-
-    a.href = url;
-    a.download =
-      "passport_photos.zip";
-
-    a.click();
-
-  }catch(err){
-
-    console.error(err);
-
-    alert(
-      "Server error."
-    );
-
-  }finally{
-
-    setLoading(false);
-
-  }
-};
-    const res =
-      await API.post(
+      const res = await API.post(
         "/crop",
         form,
         {
-          responseType:"blob"
+          responseType: "blob"
         }
       );
 
-    const url =
-      window.URL.createObjectURL(
-        new Blob([res.data])
+      const url =
+        window.URL.createObjectURL(
+          res.data
+        );
+
+      const a =
+        document.createElement("a");
+
+      a.href = url;
+
+      a.download =
+        "passport_photos.zip";
+
+      a.click();
+
+    } catch (err) {
+
+      console.error(err);
+
+      alert(
+        "Server error."
       );
 
-    const a =
-      document.createElement("a");
+    } finally {
 
-    a.href = url;
+      setLoading(false);
 
-    a.download =
-      "passport_photos.zip";
-
-    a.click();
-
-    setLoading(false);
+    }
   };
-
 
   return (
 
@@ -102,10 +70,9 @@ export default function App() {
         Passport Photo Cropper
       </h1>
 
-
       <select
         value={ratio}
-        onChange={(e)=>
+        onChange={(e) =>
           setRatio(
             e.target.value
           )
@@ -122,27 +89,29 @@ export default function App() {
 
       </select>
 
-
       <input
         type="file"
         multiple
         accept="image/*"
-        onChange={(e)=>
+        onChange={(e) =>
           setFiles(
             [...e.target.files]
           )
         }
       />
 
-
       <button
         onClick={upload}
+        disabled={
+          loading ||
+          files.length === 0
+        }
       >
 
         {
           loading
-          ? "Processing..."
-          : "Crop Photos"
+            ? "Processing..."
+            : "Crop Photos"
         }
 
       </button>
