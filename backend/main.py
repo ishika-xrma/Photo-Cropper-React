@@ -9,10 +9,12 @@ from image_processor import (
 
 app = FastAPI()
 
+
 origins = [
     "http://localhost:5173",
     "https://photo-cropper-react.netlify.app",
 ]
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -23,10 +25,18 @@ app.add_middleware(
 )
 
 
+@app.get("/health")
+def health():
+
+    return {
+        "status": "ok"
+    }
+
+
 @app.post("/crop")
 async def crop_images(
-    files: list[UploadFile]=File(...),
-    ratio_type: str=Form(...)
+    files: list[UploadFile] = File(...),
+    ratio_type: str = Form(...)
 ):
 
     processed = {}
@@ -46,9 +56,11 @@ async def crop_images(
                 file.filename
             ] = result
 
+
     zip_file = create_zip(
         processed
     )
+
 
     return StreamingResponse(
         zip_file,
