@@ -15,14 +15,14 @@ export default function App() {
 
   const upload = async ()=>{
 
-    const form =
-      new FormData();
+  try{
+
+    setLoading(true);
+
+    const form = new FormData();
 
     files.forEach(file=>{
-      form.append(
-        "files",
-        file
-      );
+      form.append("files", file);
     });
 
     form.append(
@@ -30,8 +30,42 @@ export default function App() {
       ratio
     );
 
-    setLoading(true);
+    const res = await API.post(
+      "/crop",
+      form,
+      {
+        responseType:"blob"
+      }
+    );
 
+    const url =
+      window.URL.createObjectURL(
+        res.data
+      );
+
+    const a =
+      document.createElement("a");
+
+    a.href = url;
+    a.download =
+      "passport_photos.zip";
+
+    a.click();
+
+  }catch(err){
+
+    console.error(err);
+
+    alert(
+      "Server error."
+    );
+
+  }finally{
+
+    setLoading(false);
+
+  }
+};
     const res =
       await API.post(
         "/crop",
