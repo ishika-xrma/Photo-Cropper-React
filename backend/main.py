@@ -79,7 +79,9 @@ def health():
 
 
 @app.post("/create-job")
-def create_job():
+def create_job(
+    total: int = Form(...)
+):
 
     job_id = str(
         uuid.uuid4()
@@ -94,7 +96,7 @@ def create_job():
 
         "done": 0,
 
-        "total": 0,
+        "total": total,
 
         "finished": False
 

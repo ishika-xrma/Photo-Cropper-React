@@ -37,9 +37,18 @@ export default function App() {
 
 
       // Create job first
+      const jobForm =
+        new FormData();
+
+      jobForm.append(
+        "total",
+        files.length
+      );
+
       const jobRes =
         await API.post(
-          "/create-job"
+          "/create-job",
+          jobForm
         );
 
 
@@ -131,7 +140,7 @@ export default function App() {
 
           {
             responseType:
-            "blob"
+              "blob"
           }
 
         );
