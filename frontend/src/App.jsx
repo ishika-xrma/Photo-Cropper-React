@@ -3,9 +3,19 @@ import { API } from "./api";
 
 export default function App() {
 
-  const [files, setFiles] = useState([]);
-  const [ratio, setRatio] = useState("standard");
-  const [loading, setLoading] = useState(false);
+  const [files, setFiles] =
+    useState([]);
+
+  const [ratio, setRatio] =
+    useState("standard");
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [progress, setProgress] =
+    useState("");
+
+
 
   const upload = async () => {
 
@@ -13,10 +23,16 @@ export default function App() {
 
       setLoading(true);
 
-      const form = new FormData();
+      const form =
+        new FormData();
 
-      files.forEach((file) => {
-        form.append("files", file);
+      files.forEach(file => {
+
+        form.append(
+          "files",
+          file
+        );
+
       });
 
       form.append(
@@ -24,21 +40,74 @@ export default function App() {
         ratio
       );
 
-      const res = await API.post(
-        "/crop",
-        form,
-        {
-          responseType: "blob"
-        }
+
+      setProgress(
+        "Uploading..."
       );
+
+
+      const res =
+        await API.post(
+          "/crop",
+          form,
+          {
+            responseType: "blob"
+          }
+        );
+
+
+      const jobId =
+        res.headers["job-id"];
+
+
+      const timer =
+        setInterval(
+          async () => {
+
+            const p =
+              await API.get(
+                `/progress/${jobId}`
+              );
+
+
+            setProgress(
+              `${p.data.done}/${p.data.total}
+               → ${p.data.current}`
+            );
+
+
+            if (
+              p.data.finished
+            ) {
+
+              clearInterval(
+                timer
+              );
+
+              setProgress(
+                "Completed ✓"
+              );
+
+            }
+
+          },
+          1000
+        );
+
 
       const url =
         window.URL.createObjectURL(
-          res.data
+          new Blob(
+            [res.data]
+          )
         );
 
+
       const a =
-        document.createElement("a");
+        document.createElement(
+          "a"
+        );
+
 
       a.href = url;
 
@@ -47,20 +116,31 @@ export default function App() {
 
       a.click();
 
-    } catch (err) {
+    }
 
-      console.error(err);
+    catch (error) {
 
-      alert(
-        "Server error."
+      console.error(
+        error
       );
 
-    } finally {
-
-      setLoading(false);
+      setProgress(
+        "Something went wrong"
+      );
 
     }
+
+    finally {
+
+      setLoading(
+        false
+      );
+
+    }
+
   };
+
+
 
   return (
 
@@ -69,6 +149,7 @@ export default function App() {
       <h1>
         Passport Photo Cropper
       </h1>
+
 
       <select
         value={ratio}
@@ -89,6 +170,7 @@ export default function App() {
 
       </select>
 
+
       <input
         type="file"
         multiple
@@ -99,6 +181,7 @@ export default function App() {
           )
         }
       />
+
 
       <button
         onClick={upload}
@@ -116,6 +199,15 @@ export default function App() {
 
       </button>
 
+
+      <p>
+
+        {progress}
+
+      </p>
+
     </div>
+
   );
+
 }

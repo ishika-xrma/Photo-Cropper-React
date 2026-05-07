@@ -2,10 +2,12 @@ from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 
+import uuid
+
 from image_processor import (
-    process_image,
-    create_zip
+    process_images_batch
 )
+
 
 app = FastAPI()
 
@@ -25,6 +27,17 @@ app.add_middleware(
 )
 
 
+jobs = {}
+
+
+@app.get("/")
+def home():
+
+    return {
+        "status": "alive"
+    }
+
+
 @app.get("/health")
 def health():
 
@@ -33,39 +46,70 @@ def health():
     }
 
 
+@app.get("/progress/{job_id}")
+def get_progress(
+    job_id: str
+):
+
+    return jobs.get(
+        job_id,
+        {}
+    )
+
+
 @app.post("/crop")
 async def crop_images(
     files: list[UploadFile] = File(...),
     ratio_type: str = Form(...)
 ):
 
-    processed = {}
+    job_id = str(
+        uuid.uuid4()
+    )
+
+    jobs[job_id] = {
+        "current": "",
+        "done": 0,
+        "total": len(files),
+        "finished": False
+    }
+
+
+    file_data = []
+
 
     for file in files:
 
         data = await file.read()
 
-        result = process_image(
-            data,
-            ratio_type
+        file_data.append(
+            (
+                file.filename,
+                data
+            )
         )
 
-        if result:
 
-            processed[
-                file.filename
-            ] = result
-
-
-    zip_file = create_zip(
-        processed
+    zip_file = process_images_batch(
+        file_data,
+        ratio_type,
+        jobs,
+        job_id
     )
+
+
+    jobs[
+        job_id
+    ][
+        "finished"
+    ] = True
 
 
     return StreamingResponse(
         zip_file,
         media_type="application/zip",
         headers={
+            "job-id": job_id,
             "Content-Disposition":
             "attachment; filename=passport_photos.zip"
         }
