@@ -15,61 +15,53 @@ export default function App() {
   const [progress, setProgress] =
     useState("");
 
+  const [doneCount, setDoneCount] =
+    useState(0);
+
 
 
   const upload = async () => {
+
+    let timer;
+
 
     try {
 
       setLoading(true);
 
-      const form =
-        new FormData();
-
-      files.forEach(file => {
-
-        form.append(
-          "files",
-          file
-        );
-
-      });
-
-      form.append(
-        "ratio_type",
-        ratio
-      );
-
+      setDoneCount(0);
 
       setProgress(
-        "Uploading..."
+        "Starting..."
       );
 
 
-      const res =
+      // Create job first
+      const jobRes =
         await API.post(
-          "/crop",
-          form,
-          {
-            responseType: "blob"
-          }
+          "/create-job"
         );
 
 
       const jobId =
-        res.headers["job-id"];
-
-      console.log("Job ID:", jobId);
+        jobRes.data.job_id;
 
 
-      const timer =
+      // Start polling immediately
+      timer =
         setInterval(
+
           async () => {
 
             const p =
               await API.get(
                 `/progress/${jobId}`
               );
+
+
+            setDoneCount(
+              p.data.done || 0
+            );
 
 
             setProgress(
@@ -86,6 +78,7 @@ export default function App() {
                 timer
               );
 
+
               setProgress(
                 "Completed ✓"
               );
@@ -93,16 +86,67 @@ export default function App() {
             }
 
           },
+
           1000
+
         );
+
+
+
+      const form =
+        new FormData();
+
+
+      files.forEach(
+        file => {
+
+          form.append(
+            "files",
+            file
+          );
+
+        }
+      );
+
+
+      form.append(
+        "ratio_type",
+        ratio
+      );
+
+
+      form.append(
+        "job_id",
+        jobId
+      );
+
+
+
+      const res =
+        await API.post(
+
+          "/crop",
+
+          form,
+
+          {
+            responseType:
+            "blob"
+          }
+
+        );
+
 
 
       const url =
         window.URL.createObjectURL(
+
           new Blob(
             [res.data]
           )
+
         );
+
 
 
       const a =
@@ -120,22 +164,29 @@ export default function App() {
 
     }
 
+
     catch (error) {
 
-      console.error(error);
+      console.error(
+        error
+      );
 
-      if (error.response) {
-        setProgress(
-          `Server error: ${error.response.status}`
+
+      if (timer) {
+
+        clearInterval(
+          timer
         );
+
       }
-      else {
-        setProgress(
-          "Network/CORS error"
-        );
-      }
+
+
+      setProgress(
+        "Something went wrong"
+      );
 
     }
+
 
     finally {
 
@@ -158,13 +209,17 @@ export default function App() {
       </h1>
 
 
+
       <select
+
         value={ratio}
+
         onChange={(e) =>
           setRatio(
             e.target.value
           )
         }
+
       >
 
         <option value="standard">
@@ -178,65 +233,86 @@ export default function App() {
       </select>
 
 
+
       <input
+
         type="file"
+
         multiple
+
         accept="image/*"
+
         onChange={(e) =>
           setFiles(
             [...e.target.files]
           )
         }
+
       />
 
 
+
       <button
+
         onClick={upload}
+
         disabled={
           loading ||
           files.length === 0
         }
+
       >
 
         {
+
           loading
+
             ? "Processing..."
+
             : "Crop Photos"
+
         }
 
       </button>
 
 
+
       <div className="progress-box">
 
         <div className="progress-text">
+
           {progress}
+
         </div>
 
+
+
         {
+
           loading && (
 
             <div className="progress-bar">
 
               <div
+
                 className="progress-fill"
+
                 style={{
+
                   width:
-                    progress
-                      ? `${(
-                        parseInt(
-                          progress.split("/")[0]
-                        ) /
-                        files.length
-                      ) * 100
-                      }%`
-                      : "0%"
+                    `${(
+                      doneCount /
+                      files.length
+                    ) * 100}%`
+
                 }}
+
               />
 
             </div>
 
           )
+
         }
 
       </div>
