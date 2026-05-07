@@ -2,7 +2,8 @@ from fastapi import (
     FastAPI,
     UploadFile,
     File,
-    Form
+    Form,
+    BackgroundTasks
 )
 
 from fastapi.responses import (
@@ -42,39 +43,15 @@ app.add_middleware(
 
     allow_origins=origins,
 
-    allow_credentials=False,
-
     allow_methods=["*"],
 
-    allow_headers=["*"],
-
-    expose_headers=[
-        "job-id"
-    ]
+    allow_headers=["*"]
 
 )
 
 
 
 jobs = {}
-
-
-
-@app.get("/")
-def home():
-
-    return {
-        "status": "alive"
-    }
-
-
-
-@app.get("/health")
-def health():
-
-    return {
-        "status": "ok"
-    }
 
 
 
@@ -98,7 +75,9 @@ def create_job(
 
         "total": total,
 
-        "finished": False
+        "finished": False,
+
+        "zip_file": None
 
     }
 
@@ -115,73 +94,21 @@ def get_progress(
 ):
 
     return jobs.get(
-
         job_id,
-
-        {
-            "done": 0,
-            "total": 0,
-            "current": "",
-            "finished": False
-        }
-
+        {}
     )
 
 
 
-@app.post("/crop")
-async def crop_images(
-
-    files: list[UploadFile] = File(...),
-
-    ratio_type: str = Form(...),
-
-    job_id: str = Form(...)
-
+def process_job(
+    files,
+    ratio_type,
+    job_id
 ):
-
-
-    if job_id not in jobs:
-
-        return {
-            "error":
-            "Invalid job id"
-        }
-
-
-    jobs[
-        job_id
-    ][
-        "total"
-    ] = len(
-        files
-    )
-
-
-
-    file_data = []
-
-
-
-    for file in files:
-
-        data = await file.read()
-
-
-        file_data.append(
-
-            (
-                file.filename,
-                data
-            )
-
-        )
-
-
 
     zip_file = process_images_batch(
 
-        file_data,
+        files,
 
         ratio_type,
 
@@ -192,6 +119,12 @@ async def crop_images(
     )
 
 
+    jobs[
+        job_id
+    ][
+        "zip_file"
+    ] = zip_file
+
 
     jobs[
         job_id
@@ -199,6 +132,75 @@ async def crop_images(
         "finished"
     ] = True
 
+
+
+@app.post("/crop")
+async def crop_images(
+
+    background_tasks:
+    BackgroundTasks,
+
+    files:
+    list[UploadFile] =
+    File(...),
+
+    ratio_type:
+    str =
+    Form(...),
+
+    job_id:
+    str =
+    Form(...)
+
+):
+
+
+    file_data = []
+
+
+    for file in files:
+
+        data =
+        await file.read()
+
+
+        file_data.append(
+            (
+                file.filename,
+                data
+            )
+        )
+
+
+    background_tasks.add_task(
+
+        process_job,
+
+        file_data,
+
+        ratio_type,
+
+        job_id
+
+    )
+
+
+    return {
+        "started": True
+    }
+
+
+
+@app.get("/download/{job_id}")
+def download(
+    job_id: str
+):
+
+    zip_file = jobs[
+        job_id
+    ][
+        "zip_file"
+    ]
 
 
     return StreamingResponse(
@@ -209,9 +211,6 @@ async def crop_images(
         "application/zip",
 
         headers={
-
-            "job-id":
-            job_id,
 
             "Content-Disposition":
             "attachment; filename=passport_photos.zip"
