@@ -16,42 +16,38 @@ from fastapi.middleware.cors import (
 
 import uuid
 
-
 from image_processor import (
     process_images_batch
 )
 
 
-
 app = FastAPI()
 
 
-
 origins = [
-
     "http://localhost:5173",
-
-    "https://photo-cropper-react.netlify.app"
-
+    "https://photo-cropper-react.netlify.app",
 ]
 
 
-
 app.add_middleware(
-
     CORSMiddleware,
-
     allow_origins=origins,
-
     allow_methods=["*"],
-
     allow_headers=["*"]
-
 )
 
 
-
 jobs = {}
+
+
+
+@app.get("/")
+def home():
+
+    return {
+        "status": "alive"
+    }
 
 
 
@@ -65,9 +61,7 @@ def create_job(
     )
 
 
-    jobs[
-        job_id
-    ] = {
+    jobs[job_id] = {
 
         "current": "",
 
@@ -107,15 +101,10 @@ def process_job(
 ):
 
     zip_file = process_images_batch(
-
         files,
-
         ratio_type,
-
         jobs,
-
         job_id
-
     )
 
 
@@ -137,20 +126,13 @@ def process_job(
 @app.post("/crop")
 async def crop_images(
 
-    background_tasks:
-    BackgroundTasks,
+    background_tasks: BackgroundTasks,
 
-    files:
-    list[UploadFile] =
-    File(...),
+    files: list[UploadFile] = File(...),
 
-    ratio_type:
-    str =
-    Form(...),
+    ratio_type: str = Form(...),
 
-    job_id:
-    str =
-    Form(...)
+    job_id: str = Form(...)
 
 ):
 
@@ -160,9 +142,7 @@ async def crop_images(
 
     for file in files:
 
-        data =
-        await file.read()
-
+        data = await file.read()
 
         file_data.append(
             (
