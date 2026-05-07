@@ -32,11 +32,10 @@ export default function App() {
       setDoneCount(0);
 
       setProgress(
-        "Starting..."
+        `0/${files.length} → Starting...`
       );
 
 
-      // Create job first
       const jobForm =
         new FormData();
 
@@ -44,6 +43,7 @@ export default function App() {
         "total",
         files.length
       );
+
 
       const jobRes =
         await API.post(
@@ -56,40 +56,54 @@ export default function App() {
         jobRes.data.job_id;
 
 
-      // Start polling immediately
+
       timer =
         setInterval(
 
           async () => {
 
-            const p =
-              await API.get(
-                `/progress/${jobId}`
-              );
+            try {
+
+              const p =
+                await API.get(
+                  `/progress/${jobId}`
+                );
 
 
-            setDoneCount(
-              p.data.done || 0
-            );
-
-
-            setProgress(
-              `${p.data.done}/${p.data.total}
-               → ${p.data.current}`
-            );
-
-
-            if (
-              p.data.finished
-            ) {
-
-              clearInterval(
-                timer
+              setDoneCount(
+                p.data.done || 0
               );
 
 
               setProgress(
-                "Completed ✓"
+
+                `${p.data.done}/${p.data.total}
+               → ${p.data.current}`
+
+              );
+
+
+              if (
+                p.data.finished
+              ) {
+
+                clearInterval(
+                  timer
+                );
+
+
+                setProgress(
+                  "Completed ✓"
+                );
+
+              }
+
+            }
+
+            catch (err) {
+
+              console.log(
+                "Polling retry..."
               );
 
             }
@@ -107,6 +121,7 @@ export default function App() {
 
 
       files.forEach(
+
         file => {
 
           form.append(
@@ -115,6 +130,7 @@ export default function App() {
           );
 
         }
+
       );
 
 
@@ -140,7 +156,9 @@ export default function App() {
 
           {
             responseType:
-              "blob"
+              "blob",
+
+            timeout: 0
           }
 
         );
@@ -191,7 +209,7 @@ export default function App() {
 
 
       setProgress(
-        "Something went wrong"
+        "Upload failed"
       );
 
     }
@@ -206,7 +224,6 @@ export default function App() {
     }
 
   };
-
 
 
   return (
