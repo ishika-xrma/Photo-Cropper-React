@@ -155,10 +155,18 @@ export default function App() {
           form,
 
           {
+
             responseType:
               "blob",
 
-            timeout: 0
+            timeout: 0,
+
+            maxBodyLength:
+              Infinity,
+
+            maxContentLength:
+              Infinity
+
           }
 
         );
