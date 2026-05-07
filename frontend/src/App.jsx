@@ -200,11 +200,40 @@ export default function App() {
       </button>
 
 
-      <p>
+      <div className="progress-box">
 
-        {progress}
+  <div className="progress-text">
+    {progress}
+  </div>
 
-      </p>
+  {
+    loading && (
+
+      <div className="progress-bar">
+
+        <div
+          className="progress-fill"
+          style={{
+            width:
+              progress
+              ? `${
+                  (
+                    parseInt(
+                      progress.split("/")[0]
+                    ) /
+                    files.length
+                  ) * 100
+                }%`
+              : "0%"
+          }}
+        />
+
+      </div>
+
+    )
+  }
+
+</div>
 
     </div>
 
