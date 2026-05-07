@@ -59,6 +59,8 @@ export default function App() {
       const jobId =
         res.headers["job-id"];
 
+      console.log("Job ID:", jobId);
+
 
       const timer =
         setInterval(
@@ -120,13 +122,18 @@ export default function App() {
 
     catch (error) {
 
-      console.error(
-        error
-      );
+      console.error(error);
 
-      setProgress(
-        "Something went wrong"
-      );
+      if (error.response) {
+        setProgress(
+          `Server error: ${error.response.status}`
+        );
+      }
+      else {
+        setProgress(
+          "Network/CORS error"
+        );
+      }
 
     }
 
@@ -202,38 +209,37 @@ export default function App() {
 
       <div className="progress-box">
 
-  <div className="progress-text">
-    {progress}
-  </div>
+        <div className="progress-text">
+          {progress}
+        </div>
 
-  {
-    loading && (
+        {
+          loading && (
 
-      <div className="progress-bar">
+            <div className="progress-bar">
 
-        <div
-          className="progress-fill"
-          style={{
-            width:
-              progress
-              ? `${
-                  (
-                    parseInt(
-                      progress.split("/")[0]
-                    ) /
-                    files.length
-                  ) * 100
-                }%`
-              : "0%"
-          }}
-        />
+              <div
+                className="progress-fill"
+                style={{
+                  width:
+                    progress
+                      ? `${(
+                        parseInt(
+                          progress.split("/")[0]
+                        ) /
+                        files.length
+                      ) * 100
+                      }%`
+                      : "0%"
+                }}
+              />
+
+            </div>
+
+          )
+        }
 
       </div>
-
-    )
-  }
-
-</div>
 
     </div>
 
