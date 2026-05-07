@@ -4,8 +4,10 @@ import io
 import zipfile
 
 from concurrent.futures import (
-    ThreadPoolExecutor
+    ThreadPoolExecutor,
+    as_completed
 )
+
 
 from threading import Lock
 
@@ -412,15 +414,6 @@ def process_images_batch(
         filename, data = item
 
 
-        with progress_lock:
-
-            jobs[
-                job_id
-            ][
-                "current"
-            ] = filename
-
-
         result = process_image(
             data,
             ratio_type
@@ -436,6 +429,13 @@ def process_images_batch(
             ] += 1
 
 
+            jobs[
+                job_id
+            ][
+                "current"
+            ] = filename
+
+
         if result:
 
             return (
@@ -447,25 +447,41 @@ def process_images_batch(
         return None
 
 
+
     with ThreadPoolExecutor(
         max_workers=4
     ) as executor:
 
-        results = executor.map(
-            worker,
-            files
-        )
+
+        futures = [
+
+            executor.submit(
+                worker,
+                file
+            )
+
+            for file in files
+
+        ]
 
 
-    for result in results:
+        for future in as_completed(
+            futures
+        ):
 
-        if result:
 
-            name, data = result
+            result = future.result()
 
-            processed[
-                name
-            ] = data
+
+            if result:
+
+                name, data = result
+
+
+                processed[
+                    name
+                ] = data
+
 
 
     return create_zip(
